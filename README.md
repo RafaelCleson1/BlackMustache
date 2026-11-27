@@ -51,48 +51,6 @@ lib/
 supabase/schema.sql           # DDL, RLS, triggers e seeds
 ```
 
-## 🛠️ Como Executar o Projeto
-
-### 1. Configurar o Supabase
-
-1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Abra o **SQL Editor** e execute o conteúdo de [`supabase/schema.sql`](supabase/schema.sql).
-   O script cria as tabelas `services`, `barbers` e `appointments` (com `user_id`),
-   o trigger que calcula `end_time`/`total_price`, o bloqueio de conflitos de horário,
-   as políticas de RLS por usuário e os dados iniciais do catálogo.
-3. Em **Authentication > Providers > Email**, mantenha o provedor habilitado.
-   Desative **Confirm email** se quiser que o usuário entre logo após se cadastrar;
-   se mantiver ativo, ele precisará clicar no link enviado por e-mail.
-   O botão **Cadastre-se** da tela de login cria a conta direto no app; criar
-   usuários em **Authentication > Users** continua opcional.
-4. Em **Project Settings > API**, copie a **URL do projeto** e a **publishable key**.
-
-### 2. Configurar credenciais
-
-Edite o arquivo `.env` na raiz do projeto:
-
-```env
-SUPABASE_URL=https://SEU-PROJETO.supabase.co
-SUPABASE_ANON_KEY=SUA_PUBLISHABLE_KEY_AQUI
-```
-
-> Use a URL base (`https://SEU-PROJETO.supabase.co`), sem o sufixo `/rest/v1/`.
-> Nunca coloque a `service_role key` no app. Sem credenciais válidas, a tela de
-> login exibe um aviso e o acesso ao app permanece bloqueado.
-
-### 3. Rodar o app
-
-```bash
-flutter pub get
-flutter run
-```
-
-Para gerar a versão web:
-
-```bash
-flutter build web
-```
-
 ### 4. Testes e análise
 
 ```bash
