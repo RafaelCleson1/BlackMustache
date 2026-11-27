@@ -72,7 +72,7 @@ class _ServiceDetailsScreenState extends ConsumerState<ServiceDetailsScreen> {
                     const Positioned(
                       top: 14,
                       left: 14,
-                      child: StepBadge(label: '01  |  SERVIÇO'),
+                      child: StepBadge(label: '03  |  SERVIÇO'),
                     ),
                     Positioned(
                       left: 16,

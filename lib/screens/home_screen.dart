@@ -10,6 +10,7 @@ import '../widgets/app_states.dart';
 import '../widgets/buttons.dart';
 import '../widgets/demo_mode_notice.dart';
 import '../widgets/featured_service_card.dart';
+import '../widgets/logout_button.dart';
 import '../widgets/network_photo.dart';
 import '../widgets/section_header.dart';
 import 'service_details_screen.dart';
@@ -25,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('BLACK MUSTACHE'),
+        actions: const [LogoutButton()],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1, color: AppColors.border),

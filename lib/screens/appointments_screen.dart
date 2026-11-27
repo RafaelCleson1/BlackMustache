@@ -9,6 +9,7 @@ import '../widgets/app_states.dart';
 import '../widgets/appointment_card.dart';
 import '../widgets/buttons.dart';
 import '../widgets/demo_mode_notice.dart';
+import '../widgets/logout_button.dart';
 import 'services_screen.dart';
 
 class AppointmentsScreen extends ConsumerWidget {
@@ -22,6 +23,7 @@ class AppointmentsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('MEUS AGENDAMENTOS'),
         titleTextStyle: AppTextStyles.display(size: 16, letterSpacing: 2.4),
+        actions: const [LogoutButton()],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1, color: AppColors.border),

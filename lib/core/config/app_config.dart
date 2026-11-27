@@ -12,9 +12,7 @@ abstract final class AppConfig {
   static Future<void> load() async {
     try {
       await dotenv.load(fileName: '.env');
-    } catch (_) {
-      // .env ausente: o app segue em modo demonstração.
-    }
+    } catch (_) {}
   }
 
   static bool get isSupabaseConfigured {

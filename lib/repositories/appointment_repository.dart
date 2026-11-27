@@ -25,9 +25,13 @@ class AppointmentRepository {
       return list;
     }
 
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return const <Appointment>[];
+
     final rows = await supabase
         .from('appointments')
         .select(_select)
+        .eq('user_id', userId)
         .order('appointment_date')
         .order('start_time');
 
@@ -79,9 +83,15 @@ class AppointmentRepository {
       );
     }
 
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('Você precisa estar autenticado para agendar.');
+    }
+
     final row = await supabase
         .from('appointments')
         .insert({
+          'user_id': userId,
           'client_name': clientName,
           'service_id': service.id,
           'barber_id': barber.id,

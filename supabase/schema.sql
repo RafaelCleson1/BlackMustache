@@ -1,13 +1,5 @@
--- ============================================================================
--- BLACK MUSTACHE - Script completo do banco de dados (Supabase / PostgreSQL)
--- Execute este arquivo no SQL Editor do seu projeto Supabase.
--- ============================================================================
-
 create extension if not exists "pgcrypto";
 
--- ----------------------------------------------------------------------------
--- 1. TABELAS
--- ----------------------------------------------------------------------------
 create table if not exists public.services (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -30,6 +22,7 @@ create table if not exists public.barbers (
 
 create table if not exists public.appointments (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
   client_name text not null default 'Cliente Black Mustache',
   service_id uuid not null references public.services (id) on delete restrict,
   barber_id uuid not null references public.barbers (id) on delete restrict,
@@ -42,9 +35,6 @@ create table if not exists public.appointments (
   created_at timestamptz not null default now()
 );
 
--- ----------------------------------------------------------------------------
--- 2. ÍNDICES
--- ----------------------------------------------------------------------------
 create index if not exists appointments_barber_date_idx
   on public.appointments (barber_id, appointment_date);
 
@@ -52,10 +42,6 @@ create unique index if not exists appointments_unique_slot_idx
   on public.appointments (barber_id, appointment_date, start_time)
   where status <> 'cancelled';
 
--- ----------------------------------------------------------------------------
--- 3. TRIGGER: calcula end_time e total_price a partir do serviço
---    e bloqueia conflitos de horário para o mesmo barbeiro.
--- ----------------------------------------------------------------------------
 create or replace function public.prepare_appointment()
 returns trigger
 language plpgsql
@@ -66,6 +52,15 @@ declare
   v_duration integer;
   v_price numeric(10, 2);
 begin
+  if new.user_id is null then
+    new.user_id := auth.uid();
+  end if;
+
+  if new.user_id is null then
+    raise exception 'Usuário não autenticado'
+      using errcode = '42501';
+  end if;
+
   select duration_minutes, price
     into v_duration, v_price
     from public.services
@@ -106,12 +101,6 @@ create trigger trg_prepare_appointment
 before insert or update on public.appointments
 for each row execute function public.prepare_appointment();
 
--- ----------------------------------------------------------------------------
--- 4. ROW LEVEL SECURITY
---    O app não usa autenticação nesta versão, então o acesso anônimo é liberado
---    apenas para leitura do catálogo e criação/consulta de agendamentos.
---    Em produção, restrinja os agendamentos ao usuário autenticado.
--- ----------------------------------------------------------------------------
 alter table public.services enable row level security;
 alter table public.barbers enable row level security;
 alter table public.appointments enable row level security;
@@ -125,28 +114,30 @@ create policy "barbers public read"
   on public.barbers for select to anon, authenticated using (true);
 
 drop policy if exists "appointments public read" on public.appointments;
-create policy "appointments public read"
-  on public.appointments for select to anon, authenticated using (true);
+drop policy if exists "appointments own read" on public.appointments;
+create policy "appointments own read"
+  on public.appointments for select to authenticated
+  using (auth.uid() = user_id);
 
 drop policy if exists "appointments public insert" on public.appointments;
-create policy "appointments public insert"
-  on public.appointments for insert to anon, authenticated with check (true);
+drop policy if exists "appointments own insert" on public.appointments;
+create policy "appointments own insert"
+  on public.appointments for insert to authenticated
+  with check (auth.uid() = user_id);
 
 drop policy if exists "appointments public update" on public.appointments;
-create policy "appointments public update"
-  on public.appointments for update to anon, authenticated using (true) with check (true);
+drop policy if exists "appointments own update" on public.appointments;
+create policy "appointments own update"
+  on public.appointments for update to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
--- ----------------------------------------------------------------------------
--- 5. PERMISSÕES
--- ----------------------------------------------------------------------------
+revoke all on public.appointments from anon;
 grant usage on schema public to anon, authenticated;
 grant select on public.services to anon, authenticated;
 grant select on public.barbers to anon, authenticated;
-grant select, insert, update on public.appointments to anon, authenticated;
+grant select, insert, update on public.appointments to authenticated;
 
--- ----------------------------------------------------------------------------
--- 6. SEEDS - Serviços
--- ----------------------------------------------------------------------------
 insert into public.services (id, name, description, price, duration_minutes, image_url, is_featured)
 values
   (
@@ -193,9 +184,6 @@ on conflict (id) do update set
   image_url = excluded.image_url,
   is_featured = excluded.is_featured;
 
--- ----------------------------------------------------------------------------
--- 7. SEEDS - Barbeiros
--- ----------------------------------------------------------------------------
 insert into public.barbers (id, name, specialty, avatar_url, active)
 values
   (
@@ -224,36 +212,3 @@ on conflict (id) do update set
   specialty = excluded.specialty,
   avatar_url = excluded.avatar_url,
   active = excluded.active;
-
--- ----------------------------------------------------------------------------
--- 8. SEEDS - Agendamentos de exemplo (opcional, demonstra horários ocupados)
--- ----------------------------------------------------------------------------
-insert into public.appointments (client_name, service_id, barber_id, appointment_date, start_time, total_price)
-select 'Cliente Exemplo', '11111111-1111-1111-1111-111111111104',
-       '22222222-2222-2222-2222-222222222201', current_date + 1, '10:00', 0
-where not exists (
-  select 1 from public.appointments
-  where barber_id = '22222222-2222-2222-2222-222222222201'
-    and appointment_date = current_date + 1
-    and start_time = '10:00'
-);
-
-insert into public.appointments (client_name, service_id, barber_id, appointment_date, start_time, total_price)
-select 'Cliente Exemplo', '11111111-1111-1111-1111-111111111102',
-       '22222222-2222-2222-2222-222222222202', current_date + 1, '14:00', 0
-where not exists (
-  select 1 from public.appointments
-  where barber_id = '22222222-2222-2222-2222-222222222202'
-    and appointment_date = current_date + 1
-    and start_time = '14:00'
-);
-
-insert into public.appointments (client_name, service_id, barber_id, appointment_date, start_time, total_price)
-select 'Cliente Exemplo', '11111111-1111-1111-1111-111111111103',
-       '22222222-2222-2222-2222-222222222203', current_date + 1, '09:00', 0
-where not exists (
-  select 1 from public.appointments
-  where barber_id = '22222222-2222-2222-2222-222222222203'
-    and appointment_date = current_date + 1
-    and start_time = '09:00'
-);

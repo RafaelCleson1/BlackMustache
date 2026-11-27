@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'core/navigation/app_navigator.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
-import 'screens/root_shell.dart';
+import 'screens/auth_gate.dart';
 
 class BlackMustacheApp extends StatelessWidget {
   const BlackMustacheApp({super.key});
@@ -22,8 +23,9 @@ class BlackMustacheApp extends StatelessWidget {
     return MaterialApp(
       title: 'Black Mustache',
       debugShowCheckedModeBanner: false,
+      navigatorKey: AppNavigator.rootKey,
       theme: buildAppTheme(),
-      home: const RootShell(),
+      home: const AuthGate(),
     );
   }
 }
